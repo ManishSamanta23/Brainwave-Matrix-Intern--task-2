@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Secure Blogging Platform</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- EmailJS for real OTP email (use only if integrating EmailJS) -->
+  <!-- <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script> -->
+</head>
+<body>
+  <div id="main-container" class="container">
+    <header>
+      <h1>🎨 Secure Blog Platform</h1>
+      <div class="header-actions">
+        <span id="user-welcome" style="display:none;"></span>
+        <button id="delete-account-btn" style="display:none;" class="danger-btn">Delete Account</button>
+        <button id="logout-btn" style="display:none;">Logout</button>
+      </div>
+    </header>
+
+    <section id="auth-section">
+      <!-- Login method picker -->
+      <div id="login-method-selector">
+        <h2>Choose Login Method</h2>
+        <button onclick="showUsernameLogin()" id="username-login-btn" class="method-btn">
+          Username Login
+        </button>
+        <button onclick="showEmailOTPLogin()" id="email-otp-btn" class="method-btn active">
+          Email OTP Login
+        </button>
+      </div>
+
+      <!-- Username / password -->
+      <div id="username-login-form" style="display:none;">
+        <h2>Username Login</h2>
+        <input type="text" id="login-username" placeholder="Username" />
+        <input type="password" id="login-password" placeholder="Password" />
+        <button onclick="login()">Login</button>
+        <small>or <a href="#" onclick="showRegister()">register new account</a></small>
+      </div>
+
+      <!-- Email + OTP -->
+      <div id="email-otp-login-form">
+        <h2>Email Login</h2>
+        <input type="email" id="login-email" placeholder="Enter your email" required />
+        <button onclick="requestLoginOTP()" id="request-login-otp-btn">Send Login OTP</button>
+        <div id="login-otp-section" style="display:none;">
+          <h3>Enter 4-Digit OTP</h3>
+          <p>We've sent a login code to your email</p>
+          <div class="otp-input-container">
+            <input type="text" maxlength="1" id="login-otp-1" class="otp-digit" />
+            <input type="text" maxlength="1" id="login-otp-2" class="otp-digit" />
+            <input type="text" maxlength="1" id="login-otp-3" class="otp-digit" />
+            <input type="text" maxlength="1" id="login-otp-4" class="otp-digit" />
+          </div>
+          <button onclick="verifyLoginOTP()" id="verify-login-otp-btn">Verify & Login</button>
+          <small><a href="#" onclick="resendLoginOTP()">Didn't receive? Resend</a></small>
+        </div>
+      </div>
+
+      <!-- Registration with Email OTP -->
+      <div id="register-form" style="display:none;">
+        <h2>Create New Account</h2>
+        <!-- Step 1: Registration Details -->
+        <div id="registration-step-1">
+          <input type="text" id="reg-username" placeholder="Username" />
+          <input type="email" id="reg-email" placeholder="Email Address" />
+          <input type="password" id="reg-password" placeholder="Password" />
+          <button onclick="initiateRegistration()">Create Account & Send OTP</button>
+          <small>or <a href="#" onclick="showUsernameLogin()">back to login</a></small>
+        </div>
+        <!-- Step 2: Email OTP Verification -->
+        <div id="registration-step-2" style="display:none;">
+          <h3>Verify Your Email</h3>
+          <p>We've sent a 4-digit verification code to <span id="reg-email-display"></span></p>
+          <div class="otp-input-container">
+            <input type="text" maxlength="1" id="reg-otp-1" class="otp-digit" />
+            <input type="text" maxlength="1" id="reg-otp-2" class="otp-digit" />
+            <input type="text" maxlength="1" id="reg-otp-3" class="otp-digit" />
+            <input type="text" maxlength="1" id="reg-otp-4" class="otp-digit" />
+          </div>
+          <button onclick="verifyRegistrationOTP()" id="verify-reg-otp-btn">Verify & Complete Registration</button>
+          <div class="registration-actions">
+            <small><a href="#" onclick="resendRegistrationOTP()">Didn't receive code? Resend</a></small>
+            <small><a href="#" onclick="changeRegistrationEmail()">Change email address</a></small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Account Deletion Modal -->
+    <div id="delete-account-modal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <div id="deletion-method-selection">
+          <h2>🗑️ Delete Your Account</h2>
+          <div class="warning-box">
+            <p><strong>⚠️ Warning:</strong> This action cannot be undone!</p>
+            <p>The following will be permanently deleted:</p>
+            <ul>
+              <li>Your account and profile information</li>
+              <li>All your blog posts and comments</li>
+            </ul>
+          </div>
+          <h3>Choose Verification Method:</h3>
+          <button onclick="chooseDeletionMethod('otp')" class="deletion-method-btn">
+            📧 Email OTP Verification
+            <small>We'll send a code to your email</small>
+          </button>
+          <button onclick="chooseDeletionMethod('password')" class="deletion-method-btn">
+            🔐 Password Verification  
+            <small>Enter your current password</small>
+          </button>
+          <div class="modal-actions">
+            <button onclick="closeDeletionModal()" class="cancel-btn">Cancel</button>
+          </div>
+        </div>
+
+        <div id="deletion-otp-verification" style="display:none;">
+          <h2>Email OTP Verification</h2>
+          <p>We've sent a 4-digit deletion code to your email</p>
+          <div class="otp-input-container">
+            <input type="text" maxlength="1" id="delete-otp-1" class="otp-digit" />
+            <input type="text" maxlength="1" id="delete-otp-2" class="otp-digit" />
+            <input type="text" maxlength="1" id="delete-otp-3" class="otp-digit" />
+            <input type="text" maxlength="1" id="delete-otp-4" class="otp-digit" />
+          </div>
+          <button onclick="verifyDeletionOTP()" id="verify-deletion-otp-btn">Verify & Delete Account</button>
+          <div class="modal-actions">
+            <small><a href="#" onclick="resendDeletionOTP()">Didn't receive code? Resend</a></small>
+            <button onclick="backToDeletionMethod()" class="cancel-btn">Back</button>
+          </div>
+        </div>
+
+        <div id="deletion-password-verification" style="display:none;">
+          <h2>Password Verification</h2>
+          <p>Please enter your current password to confirm account deletion</p>
+          <input type="password" id="deletion-password" placeholder="Enter your password" />
+          <div class="deletion-confirmation">
+            <label class="checkbox-label">
+              <input type="checkbox" id="confirm-deletion-checkbox" />
+              I understand this action cannot be undone
+            </label>
+          </div>
+          <button onclick="verifyDeletionPassword()" id="verify-deletion-password-btn">Delete My Account</button>
+          <div class="modal-actions">
+            <button onclick="backToDeletionMethod()" class="cancel-btn">Back</button>
+          </div>
+        </div>
+
+        <div id="deletion-final-confirmation" style="display:none;">
+          <h2>Account Deletion Successful</h2>
+          <div class="success-box">
+            <p>✅ Your account has been permanently deleted.</p>
+            <p>Thank you for using our platform.</p>
+          </div>
+          <button onclick="closeDeletionModal()" class="primary-btn">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <section id="blog-section" style="display:none;">
+      <div id="create-post">
+        <h2>New Post</h2>
+        <input type="text" id="post-title" placeholder="Title" />
+        <textarea id="post-content" placeholder="What's on your mind?"></textarea>
+        <div class="media-capture-group">
+          <label>Photo (capture now):</label>
+          <input type="file" id="photo-input" accept="image/*" capture="environment">
+          <img id="photo-preview" style="display:none;max-width:100%;margin:8px 0;border-radius:8px;"/>
+          <label>Video (capture now):</label>
+          <input type="file" id="video-input" accept="video/*" capture="environment"/>
+          <video id="video-preview" style="display:none;max-width:100%;margin:8px 0;border-radius:8px;" controls></video>
+        </div>
+        <button onclick="createPost()">Post</button>
+      </div>
+      <hr/>
+      <h2>All Posts</h2>
+      <div id="posts-list"></div>
+    </section>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
+
